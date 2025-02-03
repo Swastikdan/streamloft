@@ -2,8 +2,6 @@ import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { type WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/server/db";
-import { users } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
 import { env } from "@/env";
 
 export async function POST(req: Request) {
@@ -49,32 +47,41 @@ export async function POST(req: Request) {
 
     switch (eventType) {
       case "user.created":
-        await db.insert(users).values({
-          first_name: evt.data.first_name!,
-          last_name: evt.data.last_name!,
-          email: evt.data.email_addresses[0]!.email_address,
-          external_id: evt.data.id,
-          role: "USER",
+        await db.user.create({
+          data: {
+            first_name: evt.data.first_name!,
+            last_name: evt.data.last_name!,
+            email: evt.data.email_addresses[0]!.email_address,
+            external_provider_id: evt.data.id,
+            role: "user",
+          },
         });
         break;
 
       case "user.updated":
         const role =
-          evt.data.public_metadata.role === "admin" ? "ADMIN" : "USER";
-        await db
-          .update(users)
-          .set({
+          evt.data.public_metadata.role === "admin" ? "admin" : "user";
+        await db.user.update({
+          where: {
+            external_provider_id: evt.data.id,
+          },
+          data: {
             first_name: evt.data.first_name ?? "",
             last_name: evt.data.last_name!,
             email: evt.data.email_addresses[0]!.email_address,
             role: role,
-          })
-          .where(eq(users.external_id, evt.data.id));
+          },
+        });
+
         break;
 
       case "user.deleted":
         if (evt.data.id) {
-          await db.delete(users).where(eq(users.external_id, evt.data.id));
+          await db.user.delete({
+            where: {
+              external_provider_id: evt.data.id,
+            },
+          });
         }
         break;
 
