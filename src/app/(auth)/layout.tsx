@@ -1,32 +1,22 @@
-import Image from "next/image";
-import Link from "next/link";
 import { ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 import { Loader2 } from "lucide-react";
 import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import BasicNavbar from "@/components/common/BasicNavbar";
 export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const { userId } = await auth();
+
+  if (userId) {
+    redirect("/");
+  }
+
   return (
     <section className="flex min-h-screen flex-col items-center justify-center">
-      <nav className="w-full max-w-[1356px] justify-between p-5">
-        <Link
-          href="/"
-          className="font-heading flex items-center gap-3 text-xl font-semibold"
-        >
-          <Image
-            src="/logo_main.svg"
-            alt="Logo"
-            width={100}
-            height={100}
-            className="size-8"
-          />
-          <h1>Streamloft</h1>
-        </Link>
-        <div></div>
-      </nav>
+      <BasicNavbar />
       <div className="grid w-full grow items-center px-4 sm:justify-center">
         <ClerkLoading>
           <Loader2

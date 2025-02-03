@@ -1,3 +1,4 @@
+//api/trpc/health.ping
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 
 export const healthRouter = createTRPCRouter({

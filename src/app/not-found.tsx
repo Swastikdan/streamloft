@@ -1,31 +1,16 @@
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import Image from "next/image";
+import BasicNavbar from "@/components/common/BasicNavbar";
 export const metadata: Metadata = {
-  title: "404: Not Found",
+  title: "Page Not Found",
   description: "The page you're looking for does not exist.",
 };
 
 export default function NotFound() {
   return (
     <section className="flex min-h-screen flex-col items-center justify-center">
-      <nav className="w-full max-w-[1356px] justify-between p-5">
-        <Link
-          href="/"
-          className="font-heading flex items-center gap-3 text-xl font-semibold"
-        >
-          <Image
-            src="/logo_main.svg"
-            alt="Logo"
-            width={100}
-            height={100}
-            className="size-8"
-          />
-          <h1>Streamloft</h1>
-        </Link>
-        <div></div>
-      </nav>
+      <BasicNavbar />
       <div className="grid h-screen place-content-center px-4">
         <div className="text-center">
           <h1 className="text-9xl font-black text-primary">404</h1>
@@ -37,7 +22,11 @@ export default function NotFound() {
           home page.`}
           </p>{" "}
           <Link href="/">
-            <Button variant="secondary" className="my-5 font-light">
+            <Button
+              variant="secondary"
+              size="lg"
+              className="my-5 font-light md:text-base"
+            >
               Go Home
             </Button>
           </Link>

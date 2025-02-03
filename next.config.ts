@@ -2,8 +2,9 @@ import type { NextConfig } from "next";
 import "./src/env.js";
 const nextConfig: NextConfig = {
   experimental: {
-    inlineCss: true,
+    // inlineCss: true,
     reactCompiler: true,
+    authInterrupts: true,
     // optimizeCss: true, need to install "critters"
   },
   typescript: {
