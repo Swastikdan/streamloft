@@ -1,15 +1,15 @@
-// Example model schema from the Drizzle docs
-// https://orm.drizzle.team/docs/sql-schema-declaration
-
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   index,
   integer,
+  boolean,
   pgTableCreator,
+  primaryKey,
+  text,
   timestamp,
   varchar,
+  pgEnum,
 } from "drizzle-orm/pg-core";
-
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
  * database instance for multiple projects.
@@ -18,19 +18,30 @@ import {
  */
 export const createTable = pgTableCreator((name) => `streamloft_${name}`);
 
-export const posts = createTable(
-  "post",
+export const UserRole = pgEnum("user_role", ["ADMIN", "USER"]);
+
+export const users = createTable(
+  "users",
   {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    name: varchar("name", { length: 256 }),
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    first_name: varchar("first_name").notNull(),
+    last_name: varchar("last_name").notNull(),
+    email: varchar("email").notNull(),
+    external_id: varchar("external_id").notNull(),
+    role: UserRole("role").notNull().default("USER"),
     createdAt: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
+      .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date()
-    ),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
-  (example) => ({
-    nameIndex: index("name_idx").on(example.name),
-  })
+  (table) => ({
+    usersEmailIdx: index("users_email_idx").on(table.email),
+    usersRoleIdx: index("users_role_idx").on(table.role),
+    externalIdIdx: index("users_external_id_idx").on(table.external_id),
+  }),
 );
