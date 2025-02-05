@@ -1,11 +1,9 @@
-import "@/styles/globals.css";
-import { Bricolage_Grotesque } from "next/font/google";
-
 import { type Metadata } from "next";
 
-import { TRPCReactProvider } from "@/trpc/react";
-import { ClerkProvider } from "@clerk/nextjs";
-
+import "@/styles/globals.css";
+import { Bricolage_Grotesque } from "next/font/google";
+import { Providers } from "./providers";
+import { Toaster } from "@/components/ui/sonner";
 const baricolage = Bricolage_Grotesque({
   subsets: ["latin"],
   display: "swap",
@@ -41,12 +39,13 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
+    <Providers>
       <html lang="en" suppressHydrationWarning>
         <body className={`${baricolage.variable} font-baricolage antialiased`}>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
+          {children}
+          <Toaster />
         </body>
       </html>
-    </ClerkProvider>
+    </Providers>
   );
 }

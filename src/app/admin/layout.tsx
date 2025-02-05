@@ -1,6 +1,6 @@
 import type React from "react";
 import { isAdmin } from "@/lib/roles";
-import { forbidden } from "next/navigation";
+import { notFound } from "next/navigation";
 export default async function AdminLayout({
   children,
 }: {
@@ -8,7 +8,7 @@ export default async function AdminLayout({
 }) {
   const isAdminUser = await isAdmin();
   if (!isAdminUser) {
-    forbidden();
+    notFound();
   }
   return children;
 }

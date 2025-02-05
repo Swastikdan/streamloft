@@ -10,20 +10,19 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <section className="flex min-h-screen flex-col items-center justify-center">
-      <BasicNavbar />
-      <div className="grid h-screen place-content-center px-4">
+      <main className="grid h-screen place-content-center px-4">
         <div className="text-center">
           <h1 className="text-9xl font-black text-primary">404</h1>
           <p className="text-2xl font-bold tracking-tight sm:text-4xl">
             Uh-oh!
           </p>
-          <p className="mt-4 text-sm font-light md:text-base lg:text-lg">
+          <p className="mt-4 text-sm font-light md:text-base">
             {`Sorry, we can't find that page. You'll find lots to explore on the
           home page.`}
           </p>{" "}
           <Link href="/">
             <Button
-              variant="secondary"
+              variant="default"
               size="lg"
               className="my-5 font-light md:text-base"
             >
@@ -31,7 +30,7 @@ export default function NotFound() {
             </Button>
           </Link>
         </div>
-      </div>
+      </main>
     </section>
   );
 }
