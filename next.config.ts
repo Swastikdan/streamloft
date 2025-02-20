@@ -1,19 +1,23 @@
 import type { NextConfig } from "next";
-import "./src/env.js";
+import "@/env";
+
 const nextConfig: NextConfig = {
   experimental: {
     inlineCss: true,
     reactCompiler: true,
-    // optimizeCss: true, need to install "critters"
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
   },
 
+  // typescript: {
+  //   ignoreBuildErrors: true,
+  // },
+
+  // eslint: {
+  //   ignoreDuringBuilds: true,
+  // },
+
   compress: true,
+
+  poweredByHeader: false,
 
   images: {
     minimumCacheTTL: 31536000,
@@ -25,9 +29,30 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "ik.imagekit.io",
         port: "",
+        pathname: "/**",
       },
     ],
   },
+
+  headers: async () => [
+    {
+      source: "/:path*",
+      headers: [
+        {
+          key: "X-Content-Type-Options",
+          value: "nosniff",
+        },
+        {
+          key: "X-Frame-Options",
+          value: "DENY",
+        },
+        {
+          key: "X-XSS-Protection",
+          value: "1; mode=block",
+        },
+      ],
+    },
+  ],
 };
 
 export default nextConfig;

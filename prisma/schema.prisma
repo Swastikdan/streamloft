@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
     provider        = "prisma-client-js"
     previewFeatures = ["driverAdapters", "fullTextSearchPostgres"]
@@ -11,21 +8,360 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-enum Role {
+// user roles
+enum UserRole {
     admin
     user
 }
 
-model User {
-    id                   String   @id @default(cuid())
-    email                String   @unique
-    first_name           String
-    last_name            String
-    external_provider_id String   @unique
-    role                 Role     @default(user)
-    createdAt            DateTime @default(now())
-    updatedAt            DateTime @updatedAt
+// file types
+enum FileType {
+    video
+    trailer
+    thumbnail
+    poster
+}
 
-    @@index([role])
-    @@index([first_name, last_name])
+// file statuses
+enum FileStatus {
+    pending
+    processing
+    ready
+    failed
+}
+
+// content statuses
+enum ContentStatus {
+    draft
+    published
+    archived
+    processing
+    ready
+    failed
+}
+
+// content ratings
+enum ContentRating {
+    U
+    UA_7
+    UA_13
+    UA_16
+    A
+}
+
+enum LogLavel {
+    info
+    error
+    warning
+}
+
+enum UserLikeAction {
+    like
+    dislike
+    favorite
+    watchlist
+}
+
+enum PlaylistType {
+    mixed
+    movies_only
+    series_only
+}
+
+// User Model
+model User {
+    id          BigInt @id @default(autoincrement())
+    external_id String @unique // Clerk user ID
+
+    // user-related fields for backup
+    email                 String                 @unique
+    firstName             String                 @map("first_name")
+    lastName              String                 @map("last_name")
+    role                  UserRole               @default(user)
+    language              String                 @default("en")
+    dateOfBirth           DateTime?              @map("date_of_birth") @db.Date
+    parentalControlConfig ParentalControlConfig?
+    File                  File[]
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    watchHistory WatchHistory[]
+    Favorite     Favorite[]
+    Watchlist    Watchlist[]
+    Log          Log[]
+
+    @@index([external_id])
+    @@map("users")
+}
+
+// ParentalControlConfig Model
+model ParentalControlConfig {
+    id                  Int            @id @default(autoincrement())
+    userId              String         @unique @map("user_id")
+    user                User           @relation(fields: [userId], references: [external_id], onDelete: Cascade)
+    parentalControl     Boolean        @default(false) @map("parental_control")
+    maxContentRating    ContentRating? @map("max_content_rating")
+    parentalControlCode String?        @map("parental_control_code")
+    createdAt           DateTime       @default(now()) @map("created_at")
+    updatedAt           DateTime       @updatedAt @map("updated_at")
+
+    @@index([userId])
+    @@map("parental_control_configs")
+}
+
+// File Model
+model File {
+    id           BigInt     @id @default(autoincrement())
+    fileName     String     @map("file_name") @db.Text
+    fileKey      String     @unique @map("file_key") @db.Text
+    fileFullUrl  String     @map("file_full_url") @db.Text
+    status       FileStatus @default(pending)
+    fileType     FileType
+    mimeType     String     @map("mime_type")
+    resolution   String?
+    duration     Int?
+    fileSize     BigInt     @map("file_size")
+    uploadedById String     @map("uploaded_by_id")
+    user         User       @relation(fields: [uploadedById], references: [external_id], onDelete: Cascade)
+    createdAt    DateTime   @default(now()) @map("created_at")
+    updatedAt    DateTime   @updatedAt @map("updated_at")
+
+    moviePoster    Movie[] @relation("movie_poster")
+    movieBackdrop  Movie[] @relation("movie_backdrop")
+    movieTrailer   Movie[] @relation("movie_trailer")
+    movieVideoFile Movie[] @relation("movie_video_file")
+
+    seriesPoster     Series[]  @relation("series_poster")
+    seriesBackdrop   Series[]  @relation("series_backdrop")
+    seriesTrailer    Series[]  @relation("series_trailer")
+    episodePoster    Episode[] @relation("episode_poster")
+    episodeVideoFile Episode[] @relation("episode_video_file")
+
+    @@index([fileKey, uploadedById])
+    @@map("files")
+}
+
+// Movie Model
+model Movie {
+    id                  Int           @id @default(autoincrement())
+    title               String
+    originalTitle       String?       @map("original_title")
+    slug                String        @unique
+    description         String
+    releaseDate         DateTime      @map("release_date")
+    duration            Int           @map("duration")
+    publishedAt         DateTime?     @map("published_at")
+    rating              ContentRating @map("rating")
+    status              ContentStatus @default(draft)
+    featured            Boolean       @default(false)
+    metadata            Json? // Additional metadata as JSONB
+    featuredPlaylistsId BigInt?
+    moviePosterId       BigInt?       @map("movie_poster_id")
+    moviePoster         File?         @relation("movie_poster", fields: [moviePosterId], references: [id])
+
+    movieBackdropId BigInt? @map("movie_backdrop_id")
+    movieBackdrop   File?   @relation("movie_backdrop", fields: [movieBackdropId], references: [id])
+
+    movieTrailerId BigInt? @map("movie_trailer_id")
+    movieTrailer   File?   @relation("movie_trailer", fields: [movieTrailerId], references: [id])
+
+    movieVideoFileId BigInt? @map("movie_video_file_id")
+    movieVideoFile   File?   @relation("movie_video_file", fields: [movieVideoFileId], references: [id])
+
+    createdAt         DateTime           @default(now()) @map("created_at")
+    updatedAt         DateTime           @updatedAt @map("updated_at")
+    WatchHistory      WatchHistory[]
+    Favorite          Favorite[]
+    Watchlist         Watchlist[]
+    Genre             Genre?             @relation("movie_genres", fields: [genreId], references: [id])
+    genreId           Int?
+    Tags              Tags[]
+    FeaturedPlaylists FeaturedPlaylists? @relation("featured_playlist_movies", fields: [featuredPlaylistsId], references: [id])
+
+    @@index([id, slug, releaseDate, status, rating])
+    @@map("movies")
+}
+
+// Series Model
+model Series {
+    id                  Int           @id @default(autoincrement())
+    title               String
+    originalTitle       String?       @map("original_title")
+    slug                String        @unique
+    description         String
+    releaseDate         DateTime      @map("release_date")
+    totalSeasons        Int           @default(1) @map("total_seasons")
+    rating              ContentRating @map("rating")
+    status              ContentStatus @default(draft)
+    featured            Boolean       @default(false)
+    viewCount           Int           @default(0) @map("view_count")
+    metadata            Json? // Additional metadata as JSONB
+    featuredPlaylistsId BigInt?
+    seriesPosterId      BigInt?       @map("series_poster_id")
+    seriesPoster        File?         @relation("series_poster", fields: [seriesPosterId], references: [id])
+
+    seriesBackdropId BigInt? @map("series_backdrop_id")
+    seriesBackdrop   File?   @relation("series_backdrop", fields: [seriesBackdropId], references: [id])
+
+    seriesTrailerId BigInt? @map("series_trailer_id")
+    seriesTrailer   File?   @relation("series_trailer", fields: [seriesTrailerId], references: [id])
+
+    createdAt    DateTime       @default(now()) @map("created_at")
+    updatedAt    DateTime       @updatedAt @map("updated_at")
+    WatchHistory WatchHistory[]
+    Favorite     Favorite[]
+    Watchlist    Watchlist[]
+    Genre        Genre?         @relation("series_genres", fields: [genreId], references: [id])
+    genreId      Int?
+    Tags         Tags[]
+
+    FeaturedPlaylists FeaturedPlaylists? @relation("featured_playlist_series", fields: [featuredPlaylistsId], references: [id])
+
+    @@index([id, slug, releaseDate, status, rating])
+    @@map("series")
+}
+
+// Series Episode Model
+model Episode {
+    id            Int           @id @default(autoincrement())
+    seriesId      Int           @map("series_id")
+    seasonNumber  Int           @map("season_number")
+    episodeNumber Int           @map("episode_number")
+    title         String
+    description   String
+    duration      Int           @map("duration")
+    status        ContentStatus @default(draft)
+    publishedAt   DateTime?     @map("published_at")
+    createdAt     DateTime      @default(now()) @map("created_at")
+    updatedAt     DateTime      @updatedAt @map("updated_at")
+
+    episodePosterId BigInt? @map("episode_poster_id")
+    episodePoster   File?   @relation("episode_poster", fields: [episodePosterId], references: [id])
+
+    episodeVideoFileId BigInt?        @map("episode_video_file_id")
+    episodeVideoFile   File?          @relation("episode_video_file", fields: [episodeVideoFileId], references: [id])
+    WatchHistory       WatchHistory[]
+
+    @@unique([seriesId, seasonNumber, episodeNumber])
+    @@index([seriesId, seasonNumber, episodeNumber, status])
+    @@map("episodes")
+}
+
+model Tags {
+    id       Int     @id @default(autoincrement())
+    name     String  @unique @map("name")
+    Movie    Movie?  @relation(fields: [movieId], references: [id])
+    movieId  Int?
+    Series   Series? @relation(fields: [seriesId], references: [id])
+    seriesId Int?
+
+    @@index([name])
+    @@map("tags")
+}
+
+model Genre {
+    id          Int      @id @default(autoincrement())
+    name        String   @unique
+    slug        String   @unique
+    description String?
+    createdAt   DateTime @default(now()) @map("created_at")
+    updatedAt   DateTime @updatedAt @map("updated_at")
+
+    movies Movie[]  @relation("movie_genres")
+    series Series[] @relation("series_genres")
+
+    @@index([slug])
+    @@map("genres")
+}
+
+// Watch History Model
+model WatchHistory {
+    id        BigInt   @id @default(autoincrement())
+    userId    String   @map("user_id")
+    movieId   Int?     @map("movie_id")
+    seriesId  Int?     @map("series_id")
+    episodeId Int?     @map("episode_id")
+    position  Int // Playback position in seconds
+    completed Boolean  @default(false)
+    watchedAt DateTime @default(now()) @map("watched_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+    user      User     @relation(fields: [userId], references: [external_id], onDelete: Cascade)
+    movie     Movie?   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+    series    Series?  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+    episode   Episode? @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, movieId, seriesId, episodeId])
+    @@index([userId, movieId, seriesId, episodeId])
+    @@map("watch_history")
+}
+
+// Favorite Model
+
+model Favorite {
+    id        BigInt         @id @default(autoincrement())
+    userId    String         @map("user_id")
+    movieId   Int?           @map("movie_id")
+    seriesId  Int?           @map("series_id")
+    type      UserLikeAction @default(favorite)
+    createdAt DateTime       @default(now()) @map("created_at")
+    user      User           @relation(fields: [userId], references: [external_id], onDelete: Cascade)
+    movie     Movie?         @relation(fields: [movieId], references: [id], onDelete: Cascade)
+    series    Series?        @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, movieId, seriesId])
+    @@index([userId, movieId, seriesId])
+    @@map("favorites")
+}
+
+model Watchlist {
+    id        BigInt         @id @default(autoincrement())
+    userId    String         @map("user_id")
+    movieId   Int?           @map("movie_id")
+    seriesId  Int?           @map("series_id")
+    type      UserLikeAction @default(watchlist)
+    createdAt DateTime       @default(now()) @map("created_at")
+    user      User           @relation(fields: [userId], references: [external_id], onDelete: Cascade)
+    movie     Movie?         @relation(fields: [movieId], references: [id], onDelete: Cascade)
+    series    Series?        @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, movieId, seriesId])
+    @@index([userId, movieId, seriesId])
+    @@map("watchlist")
+}
+
+model FeaturedPlaylists {
+    id          BigInt       @id @default(autoincrement())
+    title       String
+    description String
+    slug        String       @unique
+    type        PlaylistType @default(mixed)
+    isActive    Boolean      @default(true) @map("is_active")
+
+    movies Movie[]  @relation("featured_playlist_movies")
+    series Series[] @relation("featured_playlist_series")
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    @@index([type, isActive, slug])
+    @@map("featured_playlists")
+}
+
+// logging model
+model Log {
+    id     BigInt  @id @default(autoincrement())
+    userId String? @map("user_id")
+    user   User?   @relation(fields: [userId], references: [external_id], onDelete: Cascade)
+
+    lavel   LogLavel @default(info)
+    source  String
+    message String
+
+    createdByUserType String   @map("created_by")
+    createdAt         DateTime @default(now()) @map("created_at")
+    updatedAt         DateTime @updatedAt @map("updated_at")
+
+    @@index([userId])
+    @@map("logs")
 }

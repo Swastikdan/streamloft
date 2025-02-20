@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import BasicNavbar from "@/components/common/BasicNavbar";
+
 export const metadata: Metadata = {
   title: "Page Not Found",
   description: "The page you're looking for does not exist.",
