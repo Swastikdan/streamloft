@@ -9,7 +9,7 @@
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
-
+import { getSession } from "@/lib/auth-helper/server";
 import { db } from "@/server/db";
 
 /**
@@ -22,11 +22,21 @@ import { db } from "@/server/db";
  * This helper generates the "internals" for a tRPC context. The API handler and RSC clients each
  * wrap this and provides the required context.
  *
+ * @param opts - Options for creating the context
+ * @param opts.headers - Headers from the incoming request
+ * @returns The created context which includes:
+ * @returns db - The database instance
+ * @returns session - The user's session (if authenticated)
+ * @returns user - The user's data (if authenticated)
+ * @returns headers - Headers from the incoming request
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
+  const session = await getSession();
   return {
     db,
+    session: session?.session,
+    user: session?.user,
     ...opts,
   };
 };
@@ -83,7 +93,7 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
   const start = Date.now();
 
   if (t._config.isDev) {
-    // artificial delay in dev
+    // Artificial delay in development to simulate network latency
     const waitMs = Math.floor(Math.random() * 400) + 100;
     await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
@@ -104,3 +114,55 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+
+/**
+ * Middleware that checks if the user is authenticated
+ * @throws {Error} - Throws an error if not authenticated
+ */
+const authMiddleware = t.middleware(({ ctx, next }) => {
+  if (!ctx.session || !ctx.user) {
+    throw new Error("Not authenticated");
+  }
+  return next({
+    ctx: {
+      session: ctx.session,
+      user: ctx.user,
+    },
+  });
+});
+
+/**
+ * Protected (authenticated) procedure
+ *
+ * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
+ * the session is valid and guarantees `ctx.session.user` is not null.
+ *
+ * @see https://trpc.io/docs/procedures
+ */
+export const protectedProcedure = publicProcedure.use(authMiddleware);
+
+/**
+ * Middleware that checks if the authenticated user has an admin role
+ * @throws {Error} - Throws an error if user is not an admin
+ */
+const adminMiddleware = t.middleware(({ ctx, next }) => {
+  if (!ctx.session || !ctx.user || ctx.user.role !== "admin") {
+    throw new Error("Not authorized");
+  }
+  return next({
+    ctx: {
+      session: ctx.session,
+      user: ctx.user,
+    },
+  });
+});
+
+/**
+ * Admin procedure
+ *
+ * If you want a query or mutation to ONLY be accessible to admins, use this. It verifies
+ * the session is valid, user is authenticated, and user has the "admin" role.
+ *
+ * @see https://trpc.io/docs/procedures
+ */
+export const adminProcedure = protectedProcedure.use(adminMiddleware);

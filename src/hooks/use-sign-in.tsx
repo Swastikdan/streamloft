@@ -57,19 +57,6 @@ export const AuthModalProvider = ({ children }: PropsWithChildren) => {
   const [isSignInLoading, setIsSignInLoading] = useState(false);
 
   /**
-   * Effect hook to initialize modal state from URL query parameters
-   * Opens modal if the corresponding query param is present
-   * Sets redirect URL if specified in query params
-   */
-  useEffect(() => {
-    if (searchParams.get(MODAL_QUERY_PARAM) === "true") {
-      setIsModalOpen(true);
-    }
-    const urlCallback = searchParams.get(CALLBACK_URL_QUERY_PARAM);
-    if (urlCallback) setRedirectUrl(urlCallback);
-  }, [searchParams]);
-
-  /**
    * Cleans up authentication-related query parameters from the URL
    * @returns The cleaned URL string without auth-related query params
    */
@@ -100,6 +87,40 @@ export const AuthModalProvider = ({ children }: PropsWithChildren) => {
   );
 
   /**
+   * Effect hook to handle URL parameters and authentication state
+   * - Opens modal only if query param is present AND user is not authenticated
+   * - Cleans up URL if user is already authenticated
+   */
+  useEffect(() => {
+    if (isSessionLoading) return; // Wait until session status is known
+
+    const shouldOpenModal = searchParams.get(MODAL_QUERY_PARAM) === "true";
+    const isAuthenticated = !!session?.user;
+
+    if (shouldOpenModal) {
+      if (!isAuthenticated) {
+        setIsModalOpen(true);
+      } else {
+        // User is authenticated but modal param exists - clean up URL
+        handleModalToggle(false);
+      }
+    }
+
+    // Set callback URL if specified in query params
+    const urlCallback = searchParams.get(CALLBACK_URL_QUERY_PARAM);
+    if (urlCallback) setRedirectUrl(urlCallback);
+  }, [searchParams, session?.user, isSessionLoading, handleModalToggle]);
+
+  /**
+   * Effect hook to automatically close modal when user becomes authenticated
+   */
+  useEffect(() => {
+    if (session?.user && isModalOpen) {
+      handleModalToggle(false);
+    }
+  }, [session?.user, isModalOpen, handleModalToggle]);
+
+  /**
    * Handles social authentication (Google sign-in)
    * Manages loading state and request cancellation
    */
@@ -126,8 +147,8 @@ export const AuthModalProvider = ({ children }: PropsWithChildren) => {
         toast.error("An unexpected error occurred during authentication.");
       }
     } finally {
-      // Reset loading state regardless of success/failure
-      setIsSignInLoading(false);
+      // Reset loading state regardless of success/failure after 1 min
+      setTimeout(() => setIsSignInLoading(false), 60000);
     }
   }, [redirectUrl]);
 
@@ -214,7 +235,7 @@ const AuthDialog = memo(
 
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="flex w-full max-w-sm flex-col items-center justify-center py-10 sm:max-w-md">
+        <DialogContent className="bg-card text-card-foreground flex w-full max-w-md flex-col items-center justify-center border-2 py-10 shadow sm:max-w-md">
           <DialogHeader className="flex flex-col items-center justify-center">
             <Logo className="mb-2 size-16" />
             <DialogTitle className="text-xl font-bold sm:text-2xl">

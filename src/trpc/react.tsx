@@ -10,34 +10,43 @@ import SuperJSON from "superjson";
 import { type AppRouter } from "@/server/api/root";
 import { createQueryClient } from "./query-client";
 
+/**
+ * Singleton pattern for QueryClient instances
+ * - On server: Always creates a new instance
+ * - On client: Reuses the same instance
+ */
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
-const getQueryClient = () => {
+const getQueryClient = (): QueryClient => {
   if (typeof window === "undefined") {
-    // Server: always make a new query client
+    // Server: always make a new query client for SSR/SSG
     return createQueryClient();
   }
-  // Browser: use singleton pattern to keep the same query client
-  clientQueryClientSingleton ??= createQueryClient();
-
-  return clientQueryClientSingleton;
+  // Browser: reuse client if exists or create new one
+  return (clientQueryClientSingleton ??= createQueryClient());
 };
 
+/**
+ * TRPC React client creation
+ */
 export const api = createTRPCReact<AppRouter>();
 
 /**
- * Inference helper for inputs.
- *
+ * Type inference helpers for router inputs
  * @example type HelloInput = RouterInputs['example']['hello']
  */
 export type RouterInputs = inferRouterInputs<AppRouter>;
 
 /**
- * Inference helper for outputs.
- *
+ * Type inference helpers for router outputs
  * @example type HelloOutput = RouterOutputs['example']['hello']
  */
 export type RouterOutputs = inferRouterOutputs<AppRouter>;
 
+/**
+ * TRPCProvider component that wraps the application with TRPC and React Query context
+ * @param props - Component props
+ * @param props.children - Child components to be wrapped
+ */
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
 
@@ -71,8 +80,12 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
   );
 }
 
-function getBaseUrl() {
-  if (typeof window !== "undefined") return window.location.origin;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return `http://localhost:${process.env.PORT ?? 3000}`;
+/**
+ * Determines the base URL for the TRPC API based on the environment
+ * @returns The base URL string
+ */
+function getBaseUrl(): string {
+  if (typeof window !== "undefined") return window.location.origin; // Browser
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`; // Vercel
+  return `http://localhost:${process.env.PORT ?? 3000}`; // Local development
 }

@@ -9,7 +9,12 @@ export const metadata: Metadata = {
     "Stremloft | Enjoy popular movies and TV shows. Watch anytime, anywhere. Start your free trial.",
   description:
     "Watch now on Stremloft for a wide selection of movies, TV shows, live TV, and sports. Stream high-quality content anytime on any device.",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: [
+    {
+      rel: "icon",
+      url: "https://ik.imagekit.io/swastikdan/streamloft/public/favicon.ico",
+    },
+  ],
   openGraph: {
     title:
       "Stremloft | Enjoy popular movies and TV shows. Watch anytime, anywhere. Start your free trial.",
@@ -19,7 +24,7 @@ export const metadata: Metadata = {
     url: "https://stremloft.vercel.app",
     images: [
       {
-        url: "https://stremloft.vercel.app/og-image.png",
+        url: "https://ik.imagekit.io/swastikdan/streamloft/public/og-image.png",
         width: 1200,
         height: 630,
         alt: "Stremloft | Enjoy popular movies and TV shows. Watch anytime, anywhere. Start your free trial.",
