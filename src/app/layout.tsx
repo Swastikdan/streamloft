@@ -1,15 +1,8 @@
-import { type Metadata } from "next";
-
 import "@/styles/globals.css";
-import { Bricolage_Grotesque } from "next/font/google";
-import { Providers } from "./providers";
-import { Toaster } from "@/components/ui/sonner";
-const baricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-baricolage",
-  weight: ["200", "300", "400", "500", "600", "700", "800"],
-});
+
+import { type Metadata } from "next";
+import { Inter } from "next/font/google";
+import Providers from "./providers";
 
 export const metadata: Metadata = {
   title:
@@ -34,18 +27,21 @@ export const metadata: Metadata = {
     ],
   },
 };
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  preload: true,
+});
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <Providers>
-      <html lang="en" suppressHydrationWarning>
-        <body className={`${baricolage.variable} font-baricolage antialiased`}>
-          {children}
-          <Toaster />
-        </body>
-      </html>
-    </Providers>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable}`}>
+      <Providers>
+        <body> {children}</body>
+      </Providers>
+    </html>
   );
 }

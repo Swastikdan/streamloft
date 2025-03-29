@@ -1,12 +1,29 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
+import { MODAL_QUERY_PARAM, CALLBACK_URL_QUERY_PARAM } from "@/constants";
 
-export default clerkMiddleware();
+export async function middleware(request: NextRequest) {
+  const sessionCookie = getSessionCookie(request, {});
+
+  if (!sessionCookie) {
+    // open auth modal if not logged in
+    return NextResponse.redirect(
+      new URL(
+        request.nextUrl.origin +
+          `?${MODAL_QUERY_PARAM}=true&${CALLBACK_URL_QUERY_PARAM}=${request.nextUrl.pathname}`,
+      ),
+    );
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
-    "/(api|trpc)(.*)",
+    "/account/:path*",
+    "/admin/:path*",
+    "/watchlist/:path*",
+    "/favorites/:path*",
+    "/details/:path*",
   ],
 };

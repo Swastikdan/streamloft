@@ -1,13 +1,13 @@
+import Link from "next/link";
 import React from "react";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignOutButton,
-} from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
-export default function AdminHomePage() {
+
+export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center">User Page</div>
+    <div>
+      Home
+      <Link className="p-5 text-lg underline" href="/account">
+        Account
+      </Link>
+    </div>
   );
 }

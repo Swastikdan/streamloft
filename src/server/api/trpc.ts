@@ -9,7 +9,7 @@
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
-import { currentUser } from "@clerk/nextjs/server";
+
 import { db } from "@/server/db";
 
 /**
@@ -25,10 +25,8 @@ import { db } from "@/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const user = await currentUser();
   return {
     db,
-    user,
     ...opts,
   };
 };
@@ -98,30 +96,6 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
   return result;
 });
 
-const authMiddleware = t.middleware(async ({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new Error("Unauthorized");
-  }
-
-  return next({
-    ctx: {
-      user: ctx.user,
-    },
-  });
-});
-
-const adminMiddleware = t.middleware(async ({ ctx, next }) => {
-  if (ctx.user?.publicMetadata.role !== "admin") {
-    throw new Error("Unauthorized");
-  }
-
-  return next({
-    ctx: {
-      user: ctx.user,
-    },
-  });
-});
-
 /**
  * Public (unauthenticated) procedure
  *
@@ -130,22 +104,3 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
-
-/**
- * Protected (authenticated) procedure
- *
- * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
- * the session is valid and guarantees `ctx.session.user` is not null.
- *
- * @see https://trpc.io/docs/procedures
- */
-export const protectedProcedure = publicProcedure.use(authMiddleware);
-
-/**
- * Admin procedure
- *
- * If you want a query or mutation to ONLY be accessible to admin users, use this. It verifies
- * the session is valid and guarantees `ctx.session.user` is not null and has the role "admin".
- */
-
-export const adminProcedure = protectedProcedure.use(adminMiddleware);
