@@ -8,9 +8,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
+    ppr: true,
+    dynamicIO: true,
     reactCompiler: true,
-    inlineCss: true,
+    // inlineCss: true,
   },
+
   images: {
     remotePatterns: [
       {

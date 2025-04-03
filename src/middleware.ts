@@ -12,7 +12,6 @@ import { MODAL_QUERY_PARAM, CALLBACK_URL_QUERY_PARAM } from "@/constants";
  * @returns NextResponse - Either continues to the requested page or redirects to auth
  */
 export async function middleware(request: NextRequest) {
-  const starttime = Date.now();
   // Get session cookie from the request
   const sessionCookie = getSessionCookie(request, {});
 
@@ -30,7 +29,6 @@ export async function middleware(request: NextRequest) {
 
   // User is authenticated - proceed to requested page
   return NextResponse.next();
-  console.log(`Middleware took ${Date.now() - starttime}ms to execute`);
 }
 
 /**

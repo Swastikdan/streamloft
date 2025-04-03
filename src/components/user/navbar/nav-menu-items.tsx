@@ -41,20 +41,22 @@ export function NavMenuItems() {
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>
-              <NavigationMenuTrigger className="shadow-xs">
+              <NavigationMenuTrigger className="focus:bg-accent">
                 Categories
               </NavigationMenuTrigger>
-              <NavigationMenuContent className="bg-card grid w-full min-w-[32rem] grid-cols-3 gap-4 py-3">
+              <NavigationMenuContent className="bg-card grid w-full min-w-[32rem] grid-cols-3 gap-4 p-3">
                 {CATEGORIES.map((category) => (
-                  <Link href={category.path} key={category.title}>
-                    <Button
-                      variant="ghost"
-                      size="lg"
-                      className="w-full justify-start font-light"
-                    >
-                      <NavigationMenuLink>{category.title}</NavigationMenuLink>
-                    </Button>
-                  </Link>
+                  <NavigationMenuLink key={category.title}>
+                    <Link href={category.path}>
+                      <Button
+                        variant="ghost"
+                        size="lg"
+                        className="w-full justify-start"
+                      >
+                        {category.title}
+                      </Button>
+                    </Link>
+                  </NavigationMenuLink>
                 ))}
               </NavigationMenuContent>
             </NavigationMenuItem>

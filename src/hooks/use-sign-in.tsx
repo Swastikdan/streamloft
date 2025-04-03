@@ -138,6 +138,8 @@ export const AuthModalProvider = ({ children }: PropsWithChildren) => {
 
       // Show error toast if authentication fails
       if (response?.error) {
+        signInControllerRef.current = null;
+        setIsSignInLoading(false);
         toast.error("Authentication failed. Please try again.");
       }
     } catch (error) {
